@@ -92,40 +92,74 @@ Run this yml to pull the necessary Docker images for Kafka, Cassandra, and Mongo
   ```bash
   spark-submit --packages org.apache.spark:spark-sql-kafka-0-10_2.12:3.5.0 Consumer.py
 
-
-## III. Start Cassandra
-
-### 1.Access the Cassandra Container
-- Code :
+## III. Transformations
+- Code:
   ```bash
-  docker exec -it cassandra cqlsh
+  parsedStreamDF = parsedStreamDF.withColumn("full_name", 
+    concat_ws(" ", 
+        col("name.title"), 
+        col("name.first"), 
+        col("name.last")
+    )
+  )
+  parsedStreamDF = parsedStreamDF.withColumn("calculated_age", year(current_date()) - year(to_date(parsedStreamDF["dob.date"])))
+  parsedStreamDF = parsedStreamDF.withColumn("complete_address", 
+    concat_ws(", ", 
+        col("location.street.number").cast("string"), 
+        col("location.street.name"), 
+        col("location.city"), 
+        col("location.state"), 
+        col("location.country"), 
+        col("location.postcode").cast("string")
+    )
+  )
 
-### 2. Create the keyspace "user_profiles" in Cassandra
-- Code :
-  ```bash
-  keyspace = "user_profiles"
-  session.execute(f"CREATE KEYSPACE IF NOT EXISTS {keyspace} WITH REPLICATION = {{'class': 'SimpleStrategy', 'replication_factor': 1}}")
-  session.execute(f"USE {keyspace}")
+## IV. Start Cassandra
 
-### 3. List all keyspaces   
-- Code :
-  ```bash
-    DESCRIBE KEYSPACES;
+### Define the Cassandra cluster
+cluster = Cluster(['localhost'],port=9042)
+session = cluster.connect()
 
-### 4. Switch to your keyspace and Create a Table
-- Code :
-  ```bash
-  table_name = "users"
-  table_creation_query = f"""
+### Define the keyspace name
+keyspace = "user_profiles"
+
+### Define the table name
+table_name = "users"
+
+### Create keyspace and table if they don't exist
+session.execute(f"CREATE KEYSPACE IF NOT EXISTS {keyspace} WITH REPLICATION = {{'class': 'SimpleStrategy', 'replication_factor': 1}}")
+session.execute(f"USE {keyspace}")
+
+### Define the table with full_name as the primary key
+table_creation_query = f"""
     CREATE TABLE IF NOT EXISTS {table_name} (
         full_name TEXT PRIMARY KEY,
         calculated_age INT,
         complete_address TEXT
     )
-  """
-  session.execute(table_creation_query)
+"""
+session.execute(table_creation_query)
 
-### 5. Describe the table and see its schema
-- Code :
-  ```bash
-    DESCRIBE TABLE Users;
+### Select only the columns needed for Cassandra table
+cassandraDF = parsedStreamDF.select("full_name", "calculated_age", "complete_address")
+
+
+### Function to save DataFrame to Cassandra
+def save_to_cassandra(df, keyspace, table_name, checkpoint_location):
+    query = df.writeStream \
+        .foreachBatch(lambda batch_df, batch_id: batch_df.write \
+                      .format("org.apache.spark.sql.cassandra") \
+                      .mode("append") \
+                      .option("keyspace", keyspace) \
+                      .option("table", table_name) \
+                      .option("checkpointLocation", checkpoint_location) \
+                      .save()) 
+    return query
+
+
+### Start the streaming query
+checkpoint_location = "./checkpoint/data"
+query = save_to_cassandra(cassandraDF, keyspace, table_name, checkpoint_location)
+query.start().awaitTermination()
+
+
