@@ -100,11 +100,12 @@ Run this yml to pull the necessary Docker images for Kafka, Cassandra, and Mongo
   ```bash
   docker exec -it cassandra cqlsh
 
-### 2. Create the keyspace "User_profiles" in Cassandra
+### 2. Create the keyspace "user_profiles" in Cassandra
 - Code :
   ```bash
-  CREATE KEYSPACE IF NOT EXISTS user_profiles
-  WITH replication = {'class': 'SimpleStrategy', 'replication_factor': 1};
+  keyspace = "user_profiles"
+  session.execute(f"CREATE KEYSPACE IF NOT EXISTS {keyspace} WITH REPLICATION = {{'class': 'SimpleStrategy', 'replication_factor': 1}}")
+  session.execute(f"USE {keyspace}")
 
 ### 3. List all keyspaces   
 - Code :
@@ -114,24 +115,15 @@ Run this yml to pull the necessary Docker images for Kafka, Cassandra, and Mongo
 ### 4. Switch to your keyspace and Create a Table
 - Code :
   ```bash
-  USE user_profiles;
-
-  CREATE TABLE IF NOT EXISTS Users (
-      gender TEXT,
-      full_name TEXT,
-      calculated_age INT,
-      complete_address TEXT,
-      email TEXT,
-      login_uuid TEXT,
-      login_username TEXT,
-      dob_date TEXT,
-      dob_age INT,
-      registered_date TEXT,
-      registered_age INT,
-      phone TEXT,
-      nat TEXT,
-      PRIMARY KEY (gender, nat, phone)
-  );
+  table_name = "users"
+  table_creation_query = f"""
+    CREATE TABLE IF NOT EXISTS {table_name} (
+        full_name TEXT PRIMARY KEY,
+        calculated_age INT,
+        complete_address TEXT
+    )
+  """
+  session.execute(table_creation_query)
 
 ### 5. Describe the table and see its schema
 - Code :
