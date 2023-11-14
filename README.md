@@ -117,10 +117,14 @@ Run this yml to pull the necessary Docker images for Kafka, Cassandra, and Mongo
 ## IV. Start Cassandra
 
 ### Define the Cassandra cluster
+- Code:
+  ```bash
 cluster = Cluster(['localhost'],port=9042)
 session = cluster.connect()
 
 ### Define the keyspace name
+- Code:
+  ```bash
 keyspace = "user_profiles"
 
 ### Define the table name
