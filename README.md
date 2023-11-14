@@ -176,4 +176,18 @@ Run this yml to pull the necessary Docker images for Kafka, Cassandra, and Mongo
   query = save_to_cassandra(cassandraDF, keyspace, table_name, checkpoint_location)
   query.start().awaitTermination()
 
+## VI.Documentation RGPD
 
+Data Processing Register
+
+In accordance with the GDPR, a detailed register documenting all personal data processing activities is maintained as follows:
+
+1.Data Types Stored: The system processes various personal data types sourced from Kafka topics named "user_profiles". These include fields such as gender, name, location, email, login, dob (date of birth), registered, phone, and nat (nationality).
+
+2.Processing Purposes: The data undergoes several transformations, including:
+
+-Deriving full_name by concatenating title, first name, and last name.
+-Calculating calculated_age based on the date of birth.
+-Generating complete_address by combining address-related fields.
+
+3.Security Measures Implemented: The processed data is written into a Cassandra database to ensure durability and reliability. The Cassandra database is secured using a keyspace named "user_profiles" and a table named "users". These tables are configured with appropriate access control and data security measures. The primary key full_name uniquely identifies each record.
