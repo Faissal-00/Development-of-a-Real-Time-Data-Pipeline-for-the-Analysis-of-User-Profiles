@@ -50,4 +50,3 @@ api_url = "https://randomuser.me/api/?results=1"  # You can adjust the number of
 
 # Run the function to continuously fetch and publish user profiles
 fetch_and_publish_user_profiles()
-
