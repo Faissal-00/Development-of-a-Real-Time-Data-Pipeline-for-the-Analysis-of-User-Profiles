@@ -125,45 +125,55 @@ Run this yml to pull the necessary Docker images for Kafka, Cassandra, and Mongo
 ### Define the keyspace name
 - Code:
   ```bash
-keyspace = "user_profiles"
+  keyspace = "user_profiles"
 
 ### Define the table name
-table_name = "users"
+- Code:
+  ```bash
+  table_name = "users"
 
 ### Create keyspace and table if they don't exist
-session.execute(f"CREATE KEYSPACE IF NOT EXISTS {keyspace} WITH REPLICATION = {{'class': 'SimpleStrategy', 'replication_factor': 1}}")
-session.execute(f"USE {keyspace}")
+- Code:
+  ```bash
+  session.execute(f"CREATE KEYSPACE IF NOT EXISTS {keyspace} WITH REPLICATION = {{'class': 'SimpleStrategy', 'replication_factor': 1}}")
+  session.execute(f"USE {keyspace}")
 
 ### Define the table with full_name as the primary key
-table_creation_query = f"""
-    CREATE TABLE IF NOT EXISTS {table_name} (
-        full_name TEXT PRIMARY KEY,
-        calculated_age INT,
-        complete_address TEXT
-    )
-"""
-session.execute(table_creation_query)
+- Code:
+  ```bash
+  table_creation_query = f"""
+      CREATE TABLE IF NOT EXISTS {table_name} (
+          full_name TEXT PRIMARY KEY,
+          calculated_age INT,
+          complete_address TEXT
+      )
+  """
+  session.execute(table_creation_query)
 
 ### Select only the columns needed for Cassandra table
-cassandraDF = parsedStreamDF.select("full_name", "calculated_age", "complete_address")
-
+- Code:
+  ```bash
+  cassandraDF = parsedStreamDF.select("full_name", "calculated_age", "complete_address")
 
 ### Function to save DataFrame to Cassandra
-def save_to_cassandra(df, keyspace, table_name, checkpoint_location):
-    query = df.writeStream \
-        .foreachBatch(lambda batch_df, batch_id: batch_df.write \
-                      .format("org.apache.spark.sql.cassandra") \
-                      .mode("append") \
-                      .option("keyspace", keyspace) \
-                      .option("table", table_name) \
-                      .option("checkpointLocation", checkpoint_location) \
-                      .save()) 
-    return query
-
+- Code:
+  ```bash
+  def save_to_cassandra(df, keyspace, table_name, checkpoint_location):
+      query = df.writeStream \
+          .foreachBatch(lambda batch_df, batch_id: batch_df.write \
+                        .format("org.apache.spark.sql.cassandra") \
+                        .mode("append") \
+                        .option("keyspace", keyspace) \
+                        .option("table", table_name) \
+                        .option("checkpointLocation", checkpoint_location) \
+                        .save()) 
+      return query
 
 ### Start the streaming query
-checkpoint_location = "./checkpoint/data"
-query = save_to_cassandra(cassandraDF, keyspace, table_name, checkpoint_location)
-query.start().awaitTermination()
+- Code:
+  ```bash
+  checkpoint_location = "./checkpoint/data"
+  query = save_to_cassandra(cassandraDF, keyspace, table_name, checkpoint_location)
+  query.start().awaitTermination()
 
 
