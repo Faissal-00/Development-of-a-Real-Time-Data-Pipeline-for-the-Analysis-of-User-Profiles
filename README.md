@@ -176,7 +176,7 @@ Run this yml to pull the necessary Docker images for Kafka, Cassandra, and Mongo
   query = save_to_cassandra(cassandraDF, keyspace, table_name, checkpoint_location)
   query.start().awaitTermination()
 
-## VI. Documentation RGPD
+## V. Documentation RGPD
 
 Data Processing Register
 
